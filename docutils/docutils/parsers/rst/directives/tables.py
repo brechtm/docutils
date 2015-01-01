@@ -30,6 +30,7 @@ class Table(Directive):
     final_argument_whitespace = True
     option_spec = {'class': directives.class_option,
                    'name': directives.unchanged,
+                   'width': directives.length_or_percentage_or_unitless,
                    'widths': directives.value_or(('auto', 'grid'),
                                                  directives.positive_int_list)}
     has_content = True
@@ -87,6 +88,10 @@ class Table(Directive):
                     self.block_text, self.block_text), line=self.lineno)
                 raise SystemMessagePropagation(error)
 
+    def set_table_width(self, table_node):
+        if 'width' in self.options:
+            table_node['width'] = self.options.get('width')
+
     @property
     def widths(self):
         return self.options.get('widths', 'auto')
@@ -137,6 +142,7 @@ class RSTTable(Table):
             return [error]
         table_node = node[0]
         table_node['classes'] += self.options.get('class', [])
+        self.set_table_width(table_node)
         tgroup = table_node[0]
         if type(self.widths) == list:
             colspecs = [child for child in tgroup.children
@@ -155,6 +161,7 @@ class CSVTable(Table):
     option_spec = {'header-rows': directives.nonnegative_int,
                    'stub-columns': directives.nonnegative_int,
                    'header': directives.unchanged,
+                   'width': directives.length_or_percentage_or_unitless,
                    'widths': directives.value_or(('auto', ),
                                                  directives.positive_int_list),
                    'file': directives.path,
@@ -252,6 +259,7 @@ class CSVTable(Table):
         table_node = self.state.build_table(table, self.content_offset,
                                             stub_columns, widths=widths)
         table_node['classes'] += self.options.get('class', [])
+        self.set_table_width(table_node)
         self.add_name(table_node)
         if title:
             table_node.insert(0, title)
@@ -375,6 +383,7 @@ class ListTable(Table):
 
     option_spec = {'header-rows': directives.nonnegative_int,
                    'stub-columns': directives.nonnegative_int,
+                   'width': directives.length_or_percentage_or_unitless,
                    'widths': directives.value_or(('auto', ),
                                                  directives.positive_int_list),
                    'class': directives.class_option,
@@ -402,6 +411,7 @@ class ListTable(Table):
         table_node = self.build_table_from_list(table_data, widths, col_widths,
                                                 header_rows, stub_columns)
         table_node['classes'] += self.options.get('class', [])
+        self.set_table_width(table_node)
         self.add_name(table_node)
         if title:
             table_node.insert(0, title)
